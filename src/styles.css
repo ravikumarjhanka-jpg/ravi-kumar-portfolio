@@ -510,3 +510,10 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: s
   .h2 { font-size: clamp(32px, 9vw, 40px) }
 }
 @media (prefers-reduced-motion: reduce) { .h-sound { animation: none } .dock.talking .dk-face { animation: none } }
+
+/* ===== hero photos (crossfade) ===== */
+.hero-bg .hero-ph { position: absolute; inset: 0; opacity: 0; transition: opacity 1.8s ease }
+.hero-bg .hero-ph.on { opacity: 1 }
+.hero-bg .hero-ph img { object-position: 88% 0% }
+@media (max-width: 760px) { .hero-bg .hero-ph img { object-position: 50% 0% } }
+@media (prefers-reduced-motion: reduce) { .hero-bg .hero-ph { transition: none } }

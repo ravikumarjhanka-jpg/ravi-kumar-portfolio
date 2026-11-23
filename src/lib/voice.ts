@@ -108,6 +108,8 @@ export const voice = {
   stop() { const cb = endCb; endCb = undefined; halt(); set({ speaking: false, paused: false, playing: false, text: null }); cb?.(); },
   /** Playback position of the current clip in seconds (for syncing video to the voice). */
   time: () => (audio && mode === 'clip' ? audio.currentTime : 0),
+  /** Length of the current clip in seconds (0 until known). */
+  duration: () => (audio && mode === 'clip' && isFinite(audio.duration) ? audio.duration : 0),
   toggleMute() {
     const m = !v.muted;
     if (m) voice.stop();

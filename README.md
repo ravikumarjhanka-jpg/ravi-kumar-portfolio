@@ -12,7 +12,7 @@ Vite + React + TypeScript, GSAP + Lenis for motion, a 2D-canvas globe, optional 
 | Section | Avatar state | Notes |
 |---|---|---|
 | Intro (skippable, ~2 s) | — | Light sweep and name |
-| Hero | standing, speaking | Ravi stands in his office and says the intro, lip-synced (`hero-talk.mp4`, muted, synced to the voice clip) |
+| Hero | greeting | Ravi's own photos (`hero-1`, `hero-2`) crossfade slowly; the intro clip plays over them with captions |
 | KPI strip | — | 15+ · 17 · 3 · 25+ · US$456M, animated counters |
 | About | about (arms crossed) | Lanyard ID card (`IdCard.tsx`): swings, tilts, flips to credentials and contact |
 | Experience | experience (walking) | Expandable timeline, 4 roles |
@@ -46,7 +46,7 @@ Ravi narrates the site with **pre-recorded clips** in an AI clone of his own voi
 - **Controls**: Pause, Resume, Stop and Mute while speaking; a 🔊/🔇 toggle otherwise. Mute is remembered per browser.
 - Any text without a clip (for example answers from `VITE_ASK_ENDPOINT`) falls back to a male browser voice.
 - **Voice match**: every clip was checked against Ravi's voice note with a speaker-verification model (ECAPA, average similarity about 0.78; his own note scores 0.86 against itself) and transcribed back to confirm the words.
-- **Hero intro**: `hero-talk.mp4` is lip-synced to the intro clip (`d883492a.mp3`, 18.6 s): a fixed-camera video of the hero still with natural speaking gestures (Seedance 2.5) with the mouth re-synced to the clip (Sync Lipsync 3). If you re-record the intro, re-run the lip-sync on the same idle video. `hero-stand.webp` and `hero-poster.webp` are its first frame.
+- **Hero photos**: `public/ravi/hero-<n>.webp` (1920×1080, subject on the right, dark space left for text), `hero-<n>-md.webp` (1280×720) and `hero-<n>-m.webp` (portrait, phones). The list is `SLIDES` in `src/sections/Hero.tsx`. `hero-poster.webp` (1200×675) is the social share image.
 - **Speed**: all clips play at 1.10x of the cloned voice (sped up with pitch kept, `atempo=1.10`). Apply the same to any new line.
 - **Re-recording**: clone from the same voice note, 24 kHz mono MP3, loudness normalised to -16 LUFS, so new lines match the rest.
 
@@ -101,7 +101,7 @@ Never commit `.env`, keys or tokens.
 
 ## Performance
 
-- The hero talking video is 0.7 MB (1280×720) or 0.2 MB on phones (854×480), with no audio track: sound comes from the voice clip and the video follows it. Reduced-motion users get a still image.
+- Hero photos are about 30–40 KB each; only the first loads eagerly. Reduced-motion users get the first photo without the crossfade.
 - There is no WebGL; the globe is a 2D canvas that pauses when off screen.
 - Each avatar pose is about 50 KB and loads lazily. Supabase loads only on submit.
 - With reduced motion turned on, the intro, smooth scroll and animations are skipped.
