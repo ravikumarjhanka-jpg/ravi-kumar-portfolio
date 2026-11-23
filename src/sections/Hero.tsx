@@ -6,7 +6,8 @@ import { ListenButton } from '../components/VoiceBar';
 import { useVoice, voice } from '../lib/voice';
 
 /**
- * Hero: Ravi's own photos, crossfading slowly. The intro clip plays over them with captions that follow the audio.
+ * Hero: Ravi standing in his office. The intro clip is lip-synced to a muted video that plays in step
+ * with the recorded voice (started, paused and kept in sync from the voice engine); otherwise he stands still.
  */
 // The intro split into caption lines, each timed by its share of the clip.
 const CAPS = intro.listen.split(/(?<=[.,])\s+/).reduce<string[]>((o, t) => {
@@ -16,20 +17,18 @@ const CAPS = intro.listen.split(/(?<=[.,])\s+/).reduce<string[]>((o, t) => {
 }, []);
 const CAP_ENDS = (() => { const tot = CAPS.join('').length; let acc = 0; return CAPS.map((c) => (acc += c.length) / tot); })();
 const display = (t: string) => t.replace('F P and A', 'FP&A').replace('G C C', 'GCC');
-// Photos: <name>.webp (1920 wide), <name>-md.webp (1280 wide), <name>-m.webp (portrait, phones).
-const SLIDES = ['ravi/hero-1', 'ravi/hero-2'];
-const SLIDE_MS = 7000;
 
 export function Hero({ ready }: { ready: boolean }) {
+  const vid = useRef<HTMLVideoElement>(null);
   const [lines, setLines] = useState(0); // 0 none, 1 first line, 2 both
   const [still] = useState(() => prefersReducedMotion());
+  const [sd] = useState(() => window.matchMedia('(max-width: 760px)').matches);
   const [inView, setInView] = useState(true);
   const [heard, setHeard] = useState(false); // the intro has played with sound once
   const [cap, setCap] = useState(-1);
-  const [slide, setSlide] = useState(0);
   const v = useVoice();
   const talking = v.text === intro.listen && v.speaking;
-  // Until the visitor turns sound on, offer the "Tap to hear Ravi" button.
+  // Until the visitor turns sound on, Ravi keeps speaking silently with captions, like a muted video.
   const ambient = !still && ready && !talking && !heard && inView;
 
   useEffect(() => {
@@ -47,23 +46,45 @@ export function Hero({ ready }: { ready: boolean }) {
   }, []);
   useEffect(() => { if (talking && v.playing) setHeard(true); }, [talking, v.playing]);
 
-  // Slow crossfade between the photos while the hero is on screen.
+  // With sound: play in step with the intro audio and hold on pause. Without: loop silently.
+  // After he has spoken with sound, rest on the standing pose.
   useEffect(() => {
-    if (still || !inView || SLIDES.length < 2) return;
-    const id = window.setInterval(() => setSlide((i) => (i + 1) % SLIDES.length), SLIDE_MS);
-    return () => clearInterval(id);
-  }, [still, inView]);
+    const el = vid.current; if (!el) return;
+    if (talking) {
+      el.loop = false;
+      if (v.playing) {
+        const t = voice.time();
+        if (Math.abs(el.currentTime - t) > 0.25) el.currentTime = t;
+        void el.play().catch(() => {});
+      } else el.pause();
+    } else if (ambient) {
+      el.loop = true;
+      void el.play().catch(() => {});
+    } else { el.pause(); if (el.currentTime > 0) el.currentTime = 0; setCap(-1); }
+  }, [talking, v.playing, ambient]);
 
-  // Captions follow the intro audio.
+  // Keep lips on the words: nudge the video if it drifts from the audio.
   useEffect(() => {
-    if (!talking) { setCap(-1); return; }
+    if (!talking) return;
     const id = window.setInterval(() => {
-      const d = voice.duration(); if (!d) return;
-      const f = voice.time() / d;
+      const el = vid.current; if (!el || el.paused) return;
+      const d = el.currentTime - voice.time();
+      if (Math.abs(d) > 0.18) el.currentTime = voice.time();
+    }, 400);
+    return () => clearInterval(id);
+  }, [talking]);
+
+  // Captions follow the video clock (which follows the audio when sound is on).
+  useEffect(() => {
+    const el = vid.current; if (!el) return;
+    const on = () => {
+      if (el.paused && !talking) return;
+      const f = el.duration ? el.currentTime / el.duration : 0;
       const i = CAP_ENDS.findIndex((e) => f <= e + 0.01);
       setCap(i < 0 ? CAPS.length - 1 : i);
-    }, 200);
-    return () => clearInterval(id);
+    };
+    el.addEventListener('timeupdate', on);
+    return () => el.removeEventListener('timeupdate', on);
   }, [talking]);
 
   const hearIntro = () => {
@@ -71,20 +92,16 @@ export function Hero({ ready }: { ready: boolean }) {
     voice.playPending();
     if (voice.current() !== intro.listen) voice.speak(intro.listen);
   };
-  const live = talking && cap >= 0;
+  const live = (ambient || talking) && cap >= 0;
 
   const go = (id: string) => (e: React.MouseEvent) => { e.preventDefault(); scrollToId(id); };
 
   return (
     <section className="hero" id="home" data-avatar="greeting" aria-label="Introduction">
       <div className="hero-bg" aria-hidden="true">
-        {SLIDES.map((p, i) => (
-          <picture key={p} className={'hero-ph' + (i === slide ? ' on' : '')}>
-            <source media="(max-width: 760px)" srcSet={asset(p + '-m.webp')} />
-            <img src={asset(p + '.webp')} srcSet={`${asset(p + '-md.webp')} 1280w, ${asset(p + '.webp')} 1920w`} sizes="100vw"
-              alt="" decoding="async" loading={i === 0 ? 'eager' : 'lazy'} />
-          </picture>
-        ))}
+        {still
+          ? <img src={asset('ravi/hero-stand.webp')} alt="" />
+          : <video ref={vid} className={talking ? 'talking' : ''} muted playsInline preload="auto" poster={asset('ravi/hero-stand.webp')} src={asset(sd ? 'ravi/hero-talk-sd.mp4' : 'ravi/hero-talk.mp4')} />}
         <div className="hero-shade" />
         <svg className="hero-dash" viewBox="0 0 600 200" preserveAspectRatio="none">
           <path className="dl" d="M0 170 C60 160 90 120 150 128 S250 80 300 96 S400 40 460 52 S560 20 600 18" />
@@ -113,7 +130,7 @@ export function Hero({ ready }: { ready: boolean }) {
         <div className={'hero-stage' + (live ? ' is-live' : '')} aria-live="polite">
           <div className={'h-bubble b1' + (lines >= 1 ? ' on' : '')}>{intro.line1}</div>
           <div className={'h-bubble b2' + (lines >= 2 ? ' on' : '') + (live ? ' capt' : '')}>
-            {live ? <><span className="cc-tag">● Speaking</span>{display(CAPS[cap])}</> : intro.line2}
+            {live ? <><span className="cc-tag">{talking ? '● Speaking' : 'Captions'}</span>{display(CAPS[cap])}</> : intro.line2}
           </div>
           {ambient && <button className="h-sound" data-voice-control onClick={hearIntro}><span aria-hidden="true">🔊</span> Tap to hear Ravi</button>}
           {profile.annotations.map((a, i) => <span key={a} className={`note n${i + 1}`} aria-hidden="true">{a}</span>)}
