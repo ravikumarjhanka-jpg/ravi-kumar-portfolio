@@ -59,7 +59,7 @@ export const experience = [
   {
     org: 'Miles Education', role: 'Group Vice President – Finance', period: 'Oct 2024 – Present', current: true,
     summary: 'Owns the complete group finance function and serves as CFO-equivalent to the CEO and board.',
-    highlights: ['Group finance leadership', 'Financial planning', 'Budgeting', 'Multi-entity reporting', '17 entities', 'Three geographies', 'CEO / board collaboration', 'Capital allocation', 'Investor reporting', 'Treasury', 'Working capital', 'MIS dashboards', 'FP&A', 'Zoho ERP implementation', 'Finance automation', 'Cross-border taxation', 'Transfer pricing'],
+    highlights: ['Group finance leadership', 'Financial planning', 'Budgeting', 'Multi-entity reporting', '17 entities', 'Three geographies', 'CEO / board collaboration', 'Capital allocation', 'Investor reporting', 'Treasury management', 'Working capital', 'MIS dashboards', 'FP&A', 'Zoho ERP implementation', 'Finance automation', 'Cross-border taxation', 'Transfer pricing'],
   },
   {
     org: 'Grant Thornton Bharat LLP', role: 'Associate Director', period: 'May 2023 – Oct 2024',
